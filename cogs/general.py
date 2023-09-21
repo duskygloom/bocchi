@@ -38,6 +38,6 @@ class General(commands.Cog):
             await ctx.reply("Invite me into a voice chat first.", mention_author=False)
             return
         audio_file = "audio/hello.m4a"
-        bocchi_voice.play(discord.FFmpegAudio(audio_file))
+        bocchi_voice.play(discord.FFmpegPCMAudio(audio_file))
         await ctx.channel.send(f"Playing: {audio_file}")
         await ctx.message.add_reaction('✅')
