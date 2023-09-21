@@ -1,4 +1,5 @@
 from discord.ext import commands
+import discord
 
 class General(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -31,11 +32,12 @@ class General(commands.Cog):
         brief="Bocchi will say what you send.",
         help="Bocchi will say what you send."
     )
-    async def speak(self, ctx: commands.Context, *, text: str):
+    async def speak(self, ctx: commands.Context, *, text: str = "Hi"):
         bocchi_voice = ctx.voice_client
         if bocchi_voice is None:
             await ctx.reply("Invite me into a voice chat first.", mention_author=False)
             return
-        bocchi_voice.play("audio/hello.m4a")
-        await ctx.channel.send("Playing: audio/hello.m4a")
+        audio_file = "audio/hello.m4a"
+        bocchi_voice.play(discord.FFmpegAudio(audio_file))
+        await ctx.channel.send(f"Playing: {audio_file}")
         await ctx.message.add_reaction('✅')
