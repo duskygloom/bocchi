@@ -16,7 +16,7 @@ class General(commands.Cog):
     )
     async def greet(self, ctx: commands.Context):
         if ctx.author.voice is None:
-            await ctx.reply("You are not in any voice channel.", mention_author=True)
+            await ctx.reply("You are not in any voice channel.", mention_author=False)
             return
         if ctx.voice_client is None or self.bocchi_vc is None:
             self.bocchi_vc = await ctx.author.voice.channel.connect()
