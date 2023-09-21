@@ -21,7 +21,7 @@ class Music(commands.Cog):
             await ctx.reply("You are not in any voice channel.", mention_author=False)
             return
         sender_vc = sender_voice.channel
-        if bocchi_vc is None:
+        if bocchi_vc is not None:
             await bocchi_vc.disconnect()
         await sender_vc.connect()
         await ctx.message.add_reaction('✅')

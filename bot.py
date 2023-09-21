@@ -13,13 +13,14 @@ async def create_bot(
         intents=intents
     )
 
+    bot.activity = discord.CustomActivity(name=activity)
+    bot.status = status
+
     @bot.event
     async def on_ready():
         for guild in bot.guilds:
             await guild.system_channel.send("I don't want to.")
             
-    bot.activity = discord.CustomActivity(name=activity)
-    bot.status = status
     await load_cogs(bot)
     return bot
 
