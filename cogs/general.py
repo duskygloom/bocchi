@@ -1,5 +1,7 @@
 from discord.ext import commands
-import discord
+import discord, ctypes
+
+ctypes.util.find_library("libopus")
 
 class General(commands.Cog):
     def __init__(self, bot: commands.Bot):
