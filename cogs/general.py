@@ -33,11 +33,12 @@ class General(commands.Cog):
         help="Bocchi will say what you send."
     )
     async def speak(self, ctx: commands.Context, *, text: str = "Hi"):
-        bocchi_voice = ctx.voice_client
+        bocchi_voice: discord.VoiceClient = ctx.voice_client
         if bocchi_voice is None:
             await ctx.reply("Invite me into a voice chat first.", mention_author=False)
             return
         audio_file = "audio/hello.mp3"
+        print(bocchi_voice.average_latency)
         bocchi_voice.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(audio_file)), after=lambda e: print(f'Player error: {e}') if e else None)
         await ctx.channel.send(f"Playing: {audio_file}")
         await ctx.message.add_reaction('✅')
