@@ -15,9 +15,13 @@ class Music(commands.Cog):
         help="Invites Bocchi into your voice channel."
     )
     async def come(self, ctx: context_type):
-        if ctx.author.voice is None:
+        sender_voice = ctx.author.voice
+        bocchi_vc = ctx.voice_client
+        if sender_voice is None:
             await ctx.reply("You are not in any voice channel.", mention_author=False)
             return
-        voice_channel = ctx.author.voice.channel
-        await voice_channel.connect()
+        sender_vc = sender_voice.channel
+        if bocchi_vc is None:
+            await bocchi_vc.disconnect()
+        await sender_vc.connect()
         await ctx.message.add_reaction('✅')
