@@ -1,5 +1,9 @@
-import asyncio, logging, os
+import asyncio, logging, os, discord
 from bot import create_bot
+
+discord.opus.load_opus()
+if not discord.opus.is_loaded():
+    logging.warning("opus not loaded.")
 
 try:
     from secret import bot_token
