@@ -1,10 +1,6 @@
 from discord.ext import commands
 import discord, ctypes
 
-opus_location = ctypes.util.find_library("libopus")
-print("Opus location:", opus_location)
-discord.opus.load_opus(opus_location)
-
 class General(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super().__init__()
