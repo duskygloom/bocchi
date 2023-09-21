@@ -37,7 +37,7 @@ class General(commands.Cog):
         if bocchi_voice is None:
             await ctx.reply("Invite me into a voice chat first.", mention_author=False)
             return
-        audio_file = "audio/hello.m4a"
+        audio_file = "audio/hello.mp3"
         bocchi_voice.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(audio_file)), after=lambda e: print(f'Player error: {e}') if e else None)
         await ctx.channel.send(f"Playing: {audio_file}")
         await ctx.message.add_reaction('✅')
