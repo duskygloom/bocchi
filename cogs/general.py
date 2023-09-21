@@ -7,10 +7,12 @@ class General(commands.Cog):
         self.bot = bot
         self.bocchi_vc: discord.VoiceClient = None
 
-    @commands.Command(
+    @commands.command(
         name="greet",
         brief="Hi user!",
-        description="Bocchi greets you in the voice chat."
+        description="Bocchi greets you in the voice chat.",
+        usage="!greet",
+        help="Bocchi greets you in the voice chat."
     )
     async def greet(self, ctx: commands.Context):
         if ctx.author.voice is None:
