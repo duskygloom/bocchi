@@ -1,7 +1,7 @@
 import asyncio, logging, os, discord
 from bot import create_bot
 
-discord.opus.load_opus("libopus")
+discord.opus.load_opus("opus")
 if not discord.opus.is_loaded():
     logging.warning("opus not loaded.")
 
