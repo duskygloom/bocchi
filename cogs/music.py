@@ -1,13 +1,15 @@
 import discord, logging
 from discord.ext import commands
 from yt_dlp import YoutubeDL
+from utils.general import padded_intstring
 
 class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
         self.voice_channel = None
-        self.song_queue: dict[str, str] = []
+        self.repeat = False
+        self.song_queue: list[dict[str, str]] = []
         self.ytdl_options = { "noplaylist" : True }
         self.ffmpeg_options = { "before_options": "-reconnect 2 -reconnect_streamed 2 -reconnect_delay_max 5" }
 
@@ -30,12 +32,12 @@ class Music(commands.Cog):
                 return {}
         song["title"] = info["title"]
         song["url"] = info["formats"][0]["url"]
-        # max_acodec = ""
-        # for format in info["formats"]:
-        #     if "acodec" in format and "vcodec" in format and "ext" in format and format["vcodec"] == "none" and format["ext"] == "m4a":
-        #         if format["acodec"] > max_acodec:
-        #             max_acodec = format["acodec"]
-        #             song["url"] = format["url"]
+        max_acodec = ""
+        for format in info["formats"]:
+            if "acodec" in format and "vcodec" in format and "ext" in format and format["vcodec"] == "none" and format["ext"] == "m4a":
+                if format["acodec"] >= max_acodec:
+                    max_acodec = format["acodec"]
+                    song["url"] = format["url"]
         return song
 
     def add_song(self, query: str) -> bool:
@@ -45,6 +47,23 @@ class Music(commands.Cog):
             return True
         else:
             return False
+        
+    def play_song(self, url: str):
+        if self.voice_channel:
+            if self.voice_channel.is_playing():
+                self.voice_channel.stop()
+            after_function = lambda: self.next(url)
+            if self.repeat:
+                self.voice_channel.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(
+                    url,
+                    before_options=self.ffmpeg_options,
+                    options="-vn"
+                )), after=lambda: self.play(url))
+            self.voice_channel.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(
+                url,
+                before_options=self.ffmpeg_options,
+                options="-vn"
+            )))
 
     @commands.command(
         name="play",
@@ -56,12 +75,18 @@ class Music(commands.Cog):
             return
         elif ctx.voice_client is None:
             self.voice_channel = await ctx.author.voice.channel.connect()
-        if song is not None: song_url = self.search_song(song)["url"]
-        else: song_url = self.song_queue[0]['url']
-        if len(self.song_queue) == 0 and song is None:
+        if song is not None:
+            song = self.search_song(song)
+        elif len(self.song_queue) == 0:
             await ctx.reply("No songs in the queue.", mention_author=False)
             return
-        self.voice_channel.play(discord.FFmpegPCMAudio(song_url, before_options=self.ffmpeg_options, options='-vn'))
+        else:
+            song = self.song_queue[0]
+        song_title = song["title"]
+        song_url = song["url"]
+        self.song_queue.append(song)
+        await ctx.reply(f"Playing {song_title} now.", mention_author=False)
+        await self.play_song(song_url)
         await ctx.message.add_reaction('✅')
 
     @commands.command(
@@ -77,10 +102,7 @@ class Music(commands.Cog):
             self.song_queue.pop(0)
             return
         self.song_queue.pop(0)
-        if self.voice_channel.is_playing():
-            self.voice_channel.pause()
-        self.voice_channel.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.song_queue[0]['url'])))
-        await ctx.reply(f"Playing {self.song_queue[0]['title']}", mention_author=False)
+        await self.play(self.song_queue[0]['url'])
         
     @commands.command(
             name="stop",
@@ -93,11 +115,32 @@ class Music(commands.Cog):
         await self.voice_channel.disconnect()
         self.voice_channel = None
         await ctx.message.add_reaction('✅')
+
+    @commands.command(
+            name = "repeat",
+            brief = "Toggle repeat."
+    )
+    async def repeat(self, ctx: commands.Context):
+        self.repeat = not self.repeat
     
     @commands.command(
         name="queue",
         brief="This song will be eventually played."
     )
-    async def queue(self, ctx: commands.Context, *, query: str = "Bocchi the rock"):
-        self.add_song(query)
-        await ctx.message.reply(f"Added {self.song_queue[-1]['title']}.", mention_author=False)
+    async def queue(self, ctx: commands.Context, *, query: str = None):
+        if query is not None:
+            self.add_song(query)
+            await ctx.message.reply(f"Added {self.song_queue[-1]['title']}.", mention_author=False)
+        max_int_length = len(str(len(self.song_queue)))
+        queue_embeds = []
+        if len(self.song_queue) == 0:
+            await ctx.reply("Empty queue.", mention_author=False)
+            return
+        for i in range(len(self.song_queue)):
+            embed = discord.Embed(
+                description=f"{padded_intstring(i+1, max_int_length)}. {self.song_queue[i]['title']}", 
+                url=self.song_queue[i]['url'],
+                color=discord.Color.pink()
+            )
+            queue_embeds.append(embed)
+        await ctx.send(embeds=queue_embeds)

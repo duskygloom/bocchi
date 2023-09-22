@@ -1,5 +1,6 @@
 from discord.ext import commands
 from gtts import gTTS
+from utils.general import padded_intstring
 import discord, os
 
 class General(commands.Cog):
@@ -47,7 +48,7 @@ class General(commands.Cog):
         index = 0
         while os.path.isfile(os.path.join(tts_location, f"{tts_file}{self.padded_intstring(index)}.wav")):
             index += 1
-        tts_file = os.path.join(tts_location, f"{tts_file}{self.padded_intstring(index)}.wav")
+        tts_file = os.path.join(tts_location, f"{tts_file}{padded_intstring(index)}.wav")
         if not os.path.isdir(tts_location):
             os.mkdir(tts_location)
         text = text.lower()
@@ -56,7 +57,3 @@ class General(commands.Cog):
         sound.save(tts_file)
         self.bocchi_vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(tts_file)))
         os.remove(tts_file)
-
-    def padded_intstring(self, number: int, max_length: int = 10) -> str:
-        intstring = str(number)
-        return (max_length-len(intstring))*'0' + intstring
