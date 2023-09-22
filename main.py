@@ -1,9 +1,11 @@
 import asyncio, logging, os, discord
 from bot import create_bot
+from ctypes.util import find_library
 
-discord.opus.load_opus("libopus.so.0")
+opus_so_name = find_library("opus")
+logging.warning(f"opus shared object: {opus_so_name}")
 if not discord.opus.is_loaded():
-    logging.warning("opus not loaded.")
+    discord.opus.load_opus(opus_so_name)
 
 try:
     from secret import bot_token
