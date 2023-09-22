@@ -4,6 +4,7 @@ from ctypes.util import find_library
 
 opus_so_name = find_library("opus")
 logging.warning(f"opus shared object: {opus_so_name}")
+os.system("ls /usr/lib/x86_64-linux-gnu | grep libopus")
 if not discord.opus.is_loaded():
     discord.opus.load_opus(opus_so_name)
 
