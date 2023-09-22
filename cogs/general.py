@@ -1,5 +1,6 @@
 from discord.ext import commands
-import discord
+from gtts import gTTS
+import discord, os
 
 class General(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -22,3 +23,22 @@ class General(commands.Cog):
             self.bocchi_vc = await ctx.author.voice.channel.connect()
         greet_audio = "audio/hello.m4a"
         self.bocchi_vc.play(discord.FFmpegPCMAudio(greet_audio))
+    
+    @commands.command(
+        name="say",
+        brief="I say what you send.",
+        description="Bocchi repeats after you in the voice chat.",
+        usage="!say [what to say]",
+        help="Bocchi repeats after you in the voice chat."
+    )
+    async def say(self, ctx: commands.Context, *, text: str = "Hi"):
+        if ctx.author.voice is None:
+            await ctx.reply("You are not in any voice channel.", mention_author=False)
+            return
+        if ctx.voice_client is None or self.bocchi_vc is None:
+            self.bocchi_vc = await ctx.author.voice.channel.connect()
+        tts_file = os.path.join("audio", "gtts", text)
+        if not os.path.isfile(tts_file):
+            sound = gTTS(text)
+            sound.save(tts_file)
+        self.bocchi_vc.play(discord.FFmpegPCMAudio(tts_file))
