@@ -27,4 +27,4 @@ async def create_bot(
 
 async def load_cogs(bot: commands.Bot):
     await bot.add_cog(Music(bot))
-    await bot.add_cog(General(bot))
+    # await bot.add_cog(General(bot))

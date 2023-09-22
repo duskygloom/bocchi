@@ -7,6 +7,7 @@ class General(commands.Cog):
         super().__init__()
         self.bot = bot
         self.bocchi_vc: discord.VoiceClient = None
+        self.song_queue = []
 
     @commands.command(
         name="greet",
@@ -23,6 +24,9 @@ class General(commands.Cog):
             self.bocchi_vc = await ctx.author.voice.channel.connect()
         greet_audio = "audio/hello.m4a"
         self.bocchi_vc.play(discord.FFmpegPCMAudio(greet_audio))
+
+    def is_bocchi_speaking(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+        print(member, before, after)
     
     @commands.command(
         name="say",
@@ -35,14 +39,24 @@ class General(commands.Cog):
         if ctx.author.voice is None:
             await ctx.reply("You are not in any voice channel.", mention_author=False)
             return
-        if ctx.voice_client is None or self.bocchi_vc is None:
-            self.bocchi_vc = await ctx.author.voice.channel.connect()
+        elif ctx.voice_client is not None:
+            self.bocchi_vc = ctx.voice_client.channel
+        self.bocchi_vc = await ctx.author.voice.channel.connect()
         tts_location = os.path.join("audio", "gtts")
+        tts_file = "bocchi_tts_"
+        index = 0
+        while os.path.isfile(os.path.join(tts_location, f"{tts_file}{self.padded_intstring(index)}.wav")):
+            index += 1
+        tts_file = os.path.join(tts_location, f"{tts_file}{self.padded_intstring(index)}.wav")
         if not os.path.isdir(tts_location):
             os.mkdir(tts_location)
         text = text.lower()
         tts_location = os.path.join(tts_location, text+'.wav')
-        if not os.path.isfile(tts_location):
-            sound = gTTS(text)
-            sound.save(tts_location)
-        self.bocchi_vc.play(discord.FFmpegPCMAudio(tts_location))
+        sound = gTTS(text)
+        sound.save(tts_file)
+        self.bocchi_vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(tts_file)))
+        os.remove(tts_file)
+
+    def padded_intstring(self, number: int, max_length: int = 10) -> str:
+        intstring = str(number)
+        return (max_length-len(intstring))*'0' + intstring
