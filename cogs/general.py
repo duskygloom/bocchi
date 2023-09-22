@@ -37,7 +37,7 @@ class General(commands.Cog):
             return
         if ctx.voice_client is None or self.bocchi_vc is None:
             self.bocchi_vc = await ctx.author.voice.channel.connect()
-        tts_file = os.path.join("audio", "gtts", text)
+        tts_file = os.path.join("audio", "gtts", text+".wav")
         if not os.path.isfile(tts_file):
             sound = gTTS(text)
             sound.save(tts_file)
