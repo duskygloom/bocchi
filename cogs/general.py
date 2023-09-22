@@ -20,5 +20,5 @@ class General(commands.Cog):
             return
         if ctx.voice_client is None or self.bocchi_vc is None:
             self.bocchi_vc = await ctx.author.voice.channel.connect()
-        greet_audio = "audio/hello.mp3"
-        self.bocchi_vc.play(discord.FFmpegOpusAudio(greet_audio))
+        greet_audio = "audio/hello.m4a"
+        self.bocchi_vc.play(discord.FFmpegPCMAudio(greet_audio))
