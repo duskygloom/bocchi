@@ -29,12 +29,13 @@ class Music(commands.Cog):
                 logging.error(e)
                 return {}
         song["title"] = info["title"]
-        max_acodec = ""
-        for format in info["formats"]:
-            if "acodec" in format and "vcodec" in format and "ext" in format and format["vcodec"] == "none" and format["ext"] == "m4a":
-                if format["acodec"] > max_acodec:
-                    max_acodec = format["acodec"]
-                    song["url"] = format["url"]
+        song["url"] = info["formats"][0]["url"]
+        # max_acodec = ""
+        # for format in info["formats"]:
+        #     if "acodec" in format and "vcodec" in format and "ext" in format and format["vcodec"] == "none" and format["ext"] == "m4a":
+        #         if format["acodec"] > max_acodec:
+        #             max_acodec = format["acodec"]
+        #             song["url"] = format["url"]
         return song
 
     def add_song(self, query: str) -> bool:
