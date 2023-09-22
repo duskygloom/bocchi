@@ -31,14 +31,18 @@ class General(commands.Cog):
         usage="!say [what to say]",
         help="Bocchi repeats after you in the voice chat."
     )
-    async def say(self, ctx: commands.Context, *, text: str = "Hi"):
+    async def say(self, ctx: commands.Context, *, text: str = "hi"):
         if ctx.author.voice is None:
             await ctx.reply("You are not in any voice channel.", mention_author=False)
             return
         if ctx.voice_client is None or self.bocchi_vc is None:
             self.bocchi_vc = await ctx.author.voice.channel.connect()
-        tts_file = os.path.join("audio", "gtts", text+".wav")
-        if not os.path.isfile(tts_file):
+        tts_location = os.path.join("audio", "gtts")
+        if not os.path.isdir(tts_location):
+            os.mkdir(tts_location)
+        text = text.lower()
+        tts_location = os.path.join(tts_location, text+'.wav')
+        if not os.path.isfile(tts_location):
             sound = gTTS(text)
-            sound.save(tts_file)
-        self.bocchi_vc.play(discord.FFmpegPCMAudio(tts_file))
+            sound.save(tts_location)
+        self.bocchi_vc.play(discord.FFmpegPCMAudio(tts_location))
