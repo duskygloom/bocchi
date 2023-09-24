@@ -58,11 +58,11 @@ class General(commands.Cog):
         self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(clip, **self.ffmpeg_options)), after=finish)
         while self.ongoing:
             await asyncio.sleep(1)
-        if send_clip:
-            with ctx.typing():
-                await ctx.reply(file=clip, mention_author=False)
         await ctx.message.remove_reaction('⏳', self.bot.user)
         await ctx.message.add_reaction('✅')
+        if send_clip:
+            async with ctx.typing():
+                await ctx.reply(file=clip, mention_author=False)
     
     @commands.command(
         name = "language",
