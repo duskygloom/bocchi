@@ -1,36 +1,34 @@
 import os, math, random
 from gtts import tts
 
-def padded_intstring(number: int, max_length: int = 10) -> str:
-    intstring = str(number)
-    return (max_length-len(intstring))*'0' + intstring
+def padded_int_string(number: int, max_length: int = 10) -> str:
+    int_string = str(number)
+    return (max_length-len(int_string))*'0' + int_string
 
 def get_filename(folder: str, extension: str):
-    file_dir = os.path.join("downloads", folder)
+    download_dir = "downloads"
+    if not os.path.isdir(download_dir):
+        os.mkdir(download_dir)
+    file_dir = os.path.join(download_dir, folder)
+    if not os.path.isdir(file_dir):
+        os.mkdir(file_dir)
     index = 0
-    filename = os.path.join(file_dir, f"{folder}_{padded_intstring(index)}.{extension}")
+    filename = os.path.join(file_dir, f"{folder}_{padded_int_string(index)}.{extension}")
     while os.path.isfile(filename):
         index += 1
-        filename = os.path.join(file_dir, f"{folder}_{padded_intstring(index)}.{extension}")
+        filename = os.path.join(file_dir, f"{folder}_{padded_int_string(index)}.{extension}")
+    # creating empty file
+    empty = open(filename, "wb")
+    empty.close()
     return filename
 
 def get_ytdl_options() -> (dict, str):
     '''returns ytdl options and the output filename used'''
-    output_file = get_filename("audio", "mp4")
+    output_file = get_filename("audio", "m4a")
     ytdl_options = {
-        'format': 'm4a/bestaudio/best',
-        # 'extractaudio': True,
-        # 'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-        'outtmpl': output_file,
-        # 'restrictfilenames': True,
-        'noplaylist': True,
-        # 'nocheckcertificate': True,
-        # 'ignoreerrors': False,
-        # 'logtostderr': False,
-        # 'quiet': True,
-        # 'no_warnings': True,
-        # 'default_search': 'ytsearch',
-        # 'source_address': '0.0.0.0',
+        "format": "m4a/bestaudio/best",
+        "outtmpl": output_file,
+        "noplaylist": True,
     }
     return ytdl_options, output_file
 
@@ -56,5 +54,6 @@ def generate_lang_help():
         help_text = ""
         for j in range(langs_per_help):
             index = i*langs_per_help + j
-            help_text += f"{index+1}. **{available_langs[index][0]}** - {available_langs[index][1]}\n"
+            if index < len(available_langs):
+                help_text += f"{index+1}. **{available_langs[index][0]}** - {available_langs[index][1]}\n"
         yield help_text.rstrip()

@@ -1,11 +1,12 @@
-import discord, logging, typing
+import discord, logging, typing, os
 from discord.ext import commands
 from yt_dlp import YoutubeDL
-from utils.general import get_ytdl_options, padded_intstring
-from utils.music import get_voice_client
+from bot import VoiceBot
+from utils.general import get_ytdl_options, padded_int_string
+from utils.music import get_voice_client, disconnect_client
 
 class Music(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: VoiceBot):
         super().__init__()
         self.bot = bot
         self.repeat = False
@@ -37,17 +38,22 @@ class Music(commands.Cog):
         song["path"] = output_file
         return song
         
-    def play_next(self, ctx: commands.Context, error: Exception = None):
+    def play_next(self, ctx: commands.Context, previous_song: str, error: Exception = None):
         # firstly logging if any error generated
         if error:
             logging.error(error)
+        # removes the previous song
+        os.remove(previous_song)
         # checking if voice client is ok
-        if not self.voice_client:
+        if not self.bot.current_client:
             return
-        elif self.voice_client.is_playing():
-            self.voice_client.stop()
+        elif self.bot.current_client.is_playing():
+            self.bot.current_client.pause()
         # dequeue and play
-        if len(self.song_queue) < 2:
+        if len(self.song_queue) == 0:
+            return
+        elif len(self.song_queue) == 1:
+            self.song_queue.pop(0)
             return
         self.song_queue.pop(0)
         self.play_song(ctx)
@@ -56,17 +62,17 @@ class Music(commands.Cog):
         '''just plays songs'''
         if error:
             logging.error(error)
-        if not self.voice_client:
+        if not self.bot.current_client:
             return
-        elif self.voice_client.is_playing():
-            self.voice_client.pause()
+        elif self.bot.current_client.is_playing():
+            self.bot.current_client.pause()
         elif len(self.song_queue) < 1:
             return
         if self.repeat:
             after = lambda e: self.play_song(ctx, e)
         else:
-            after = lambda e: self.play_next(ctx, e)
-        self.voice_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(
+            after = lambda e: self.play_next(ctx, self.song_queue[0]["path"], e)
+        self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(
             self.song_queue[0]["path"],
             before_options=self.ffmpeg_options,
             options="-vn"
@@ -77,13 +83,12 @@ class Music(commands.Cog):
         brief="Plays the song specified or the first song in the queue."
     )
     async def play(self, ctx: commands.Context, *, song: str = None):
-        self.voice_client = await get_voice_client(ctx, self.voice_client)
-        if not self.voice_client:
-            await ctx.reply("You are not in any voice channel.", mention_author=False)
-            return
+        self.bot.current_client = await get_voice_client(ctx)
+        if not self.bot.current_client: return
         if song:
             await ctx.message.add_reaction('⏳')
-            song = self.search_song(song)
+            async with ctx.typing():
+                song = self.search_song(song)
             await ctx.message.remove_reaction('⏳', self.bot.user)
             if not song:
                 await ctx.reply(f"Could not find the song: {song}", mention_author=False)
@@ -108,19 +113,19 @@ class Music(commands.Cog):
             brief = "Proceeds to the next song."
     )
     async def next(self, ctx: commands.Context):
-        self.voice_client = await get_voice_client(ctx, self.voice_client)
-        if not self.voice_client:
+        self.bot.current_client = await get_voice_client(ctx)
+        if not self.bot.current_client:
             return
         if len(self.song_queue) == 0:
             await ctx.reply("No songs in the queue.", mention_author=False)
-            self.voice_client.stop()
-            self.voice_client = None
+            await disconnect_client(ctx)
+            self.bot.current_client = await get_voice_client(ctx)
             return
         elif len(self.song_queue) == 1:
             await ctx.reply("No songs left to play.", mention_author=False)
             self.song_queue.pop(0)
-            self.voice_client.stop()
-            self.voice_client = None
+            await disconnect_client(ctx)
+            self.bot.current_client = await get_voice_client(ctx)
             return
         self.song_queue.pop(0)
         await self.play(ctx, song=self.song_queue[0]["path"])
@@ -130,11 +135,12 @@ class Music(commands.Cog):
             brief="Okay I will stop that song."
     )
     async def stop(self, ctx: commands.Context):
-        if not self.voice_client:
+        self.bot.current_client = await get_voice_client(ctx)
+        if not self.bot.current_client:
             await ctx.reply("I am not in any voice channel.", mention_author=False)
             return
-        await self.voice_client.disconnect()
-        self.voice_client = None
+        await disconnect_client(ctx)
+        self.bot.current_client = await get_voice_client(ctx)
         await ctx.message.add_reaction('✅')
 
     @commands.command(
@@ -162,8 +168,9 @@ class Music(commands.Cog):
             brief = "Pauses the song."
     )
     async def pause(self, ctx: commands.Context):
-        if ctx.voice_client and self.voice_client and self.voice_client.is_playing():
-            self.voice_client.pause()
+        self.bot.current_client = await get_voice_client(ctx)
+        if ctx.voice_client and self.bot.current_client and self.bot.current_client.is_playing():
+            self.bot.current_client.pause()
         else:
             await ctx.reply("No song is being played.", mention_author=False)
         await ctx.message.add_reaction('✅')
@@ -173,8 +180,9 @@ class Music(commands.Cog):
             brief = "Resumes the song."
     )
     async def resume(self, ctx: commands.Context):
-        if ctx.voice_client and self.voice_client and self.voice_client.is_paused():
-            self.voice_client.resume()
+        self.bot.current_client = await get_voice_client(ctx)
+        if ctx.voice_client and self.bot.current_client and self.bot.current_client.is_paused():
+            self.bot.current_client.resume()
         else:
             await ctx.reply("No song was paused.", mention_author=False)
         await ctx.message.add_reaction('✅')
@@ -184,11 +192,13 @@ class Music(commands.Cog):
             brief = "Changes volume for the song."
     )
     async def volume(self, ctx: commands.Context, volume: float = 90):
-        self.voice_client = await get_voice_client(ctx, self.voice_client)
+        if not self.bot.current_client:
+            await ctx.reply("I am not in any voice channel.", mention_author=False)
+            return
         self.volume = volume
-        source = self.voice_client.source
-        if source and self.voice_client and self.voice_client.is_playing():
-            self.voice_client.source = discord.PCMVolumeTransformer(source, volume/100)
+        source = self.bot.current_client.source
+        if source and self.bot.current_client and self.bot.current_client.is_playing():
+            self.bot.current_client.source = discord.PCMVolumeTransformer(source, volume/100)
         await ctx.message.add_reaction('✅')
     
     @commands.command(
@@ -199,7 +209,8 @@ class Music(commands.Cog):
         # adding any song if provided
         if query:
             await ctx.message.add_reaction('⏳')
-            song = self.search_song(query)
+            async with ctx.typing():
+                song = self.search_song(query)
             await ctx.message.remove_reaction('⏳', self.bot.user)
             if not song:
                 await ctx.message.reply(f"Could not find a song with that query.", mention_author=False)
@@ -217,7 +228,7 @@ class Music(commands.Cog):
             queue_embeds = []
             while j < len(self.song_queue) and j < i+10:
                 embed = discord.Embed(
-                    description=f"{padded_intstring(j+1, max_int_length)}. {self.song_queue[j]['title']}", 
+                    description=f"{padded_int_string(j+1, max_int_length)}. {self.song_queue[j]['title']}", 
                     url=self.song_queue[j]['url'],
                     color=discord.Color.pink()
                 )
@@ -231,7 +242,7 @@ class Music(commands.Cog):
         brief="Displays the status of the current song."
     )
     async def status(self, ctx: commands.Context):
-        if self.voice_client and self.voice_client.is_playing() and len(self.song_queue) > 0:
+        if self.bot.current_client and self.bot.current_client.is_playing() and len(self.song_queue) > 0:
             song = self.song_queue[0]
             embed = discord.Embed(
                 title="Current song",

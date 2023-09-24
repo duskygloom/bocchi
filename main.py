@@ -1,5 +1,7 @@
-import asyncio, logging, os, discord
-from bot import create_bot
+import asyncio, logging, os
+from bot import VoiceBot
+# from cogs.music import Music
+from cogs.general import General
 
 try:
     from secret import bot_token
@@ -8,7 +10,8 @@ except ModuleNotFoundError:
 
 if __name__ == "__main__":
     try:
-        bot = asyncio.run(create_bot())
+        bot = VoiceBot()
+        asyncio.run(bot.add_cog(General(bot)))
         bot.run(bot_token)
     except Exception as e:
         logging.error(e)
