@@ -43,10 +43,10 @@ class General(commands.Cog):
         await ctx.message.add_reaction('✅')
 
     @commands.command(
-            name = "speak",
-            brief = "Random Bocchi lines from the anime."
+            name = "clip",
+            brief = "Random clips."
     )
-    async def speak(self, ctx: commands.Context, send_clip: int = 0, *, clip_name: typing.Optional[str]):
+    async def speak(self, ctx: commands.Context, send_clip: typing.Optional[int], *, clip_name: typing.Optional[str]):
         await self.bot.get_author_voice_client(ctx.author)
         if not self.bot.current_client:
             await ctx.reply("You are not in any voice channel.", mention_author=False)
