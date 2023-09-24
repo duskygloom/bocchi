@@ -1,44 +1,29 @@
 import discord, logging, typing
 from discord.ext import commands
 from yt_dlp import YoutubeDL
-from utils.general import padded_intstring
+from utils.general import get_ytdl_options, padded_intstring
 from utils.music import get_voice_client
 
 class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
-        self.voice_client = None
         self.repeat = False
         self.volume = 90
         self.song_queue: list[dict[str, str]] = []
-        self.ytdl_options = {
-            'format': 'bestaudio/best',
-            'extractaudio': True,
-            'audioformat': 'mp3',
-            'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-            'restrictfilenames': True,
-            'noplaylist': True,
-            'nocheckcertificate': True,
-            'ignoreerrors': False,
-            'logtostderr': False,
-            'quiet': True,
-            'no_warnings': True,
-            # 'default_search': 'ytsearch',
-            'source_address': '0.0.0.0',
-        }
         self.ffmpeg_options = {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 +discardcorrupt" }
 
     def search_song(self, query: str) -> dict[str, str]:
-        song = {"title": "", "url": "", "uploader": "", "thumbnail": "", "duration": ""}
+        song = {"title": "", "url": "", "uploader": "", "thumbnail": "", "duration": "", "path": ""}
         try:
+            ytdl_options, output_file = get_ytdl_options()
             # assuming query is url
-            video = YoutubeDL(params=self.ytdl_options).extract_info(query, download=True)
+            video = YoutubeDL(params=ytdl_options).extract_info(query, download=True)
             info = video
         except Exception:
             # assuming it's a normal search query
             try:
-                videos = YoutubeDL(params=self.ytdl_options).extract_info(f"ytsearch:{query}", download=False)
+                videos = YoutubeDL(params=ytdl_options).extract_info(f"ytsearch:{query}", download=True)
                 if len(videos["entries"]) == 0:
                     return {}
                 info = videos["entries"][0]
@@ -49,6 +34,7 @@ class Music(commands.Cog):
         for key in song:
             if key in info:
                 song[key] = info[key]
+        song["path"] = output_file
         return song
         
     def play_next(self, ctx: commands.Context, error: Exception = None):
@@ -81,7 +67,7 @@ class Music(commands.Cog):
         else:
             after = lambda e: self.play_next(ctx, e)
         self.voice_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(
-            self.song_queue[0]["url"],
+            self.song_queue[0]["path"],
             before_options=self.ffmpeg_options,
             options="-vn"
         ), volume=self.volume/100), after=after)
@@ -137,7 +123,7 @@ class Music(commands.Cog):
             self.voice_client = None
             return
         self.song_queue.pop(0)
-        await self.play(ctx, song=self.song_queue[0]['url'])
+        await self.play(ctx, song=self.song_queue[0]["path"])
         
     @commands.command(
             name="stop",

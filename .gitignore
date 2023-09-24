@@ -1,4 +1,6 @@
 __pycache__
 test.ipynb
 secret.py
-audio/gtts
+downloads/audio
+downloads/tts
+downloads/video
