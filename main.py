@@ -12,8 +12,8 @@ if __name__ == "__main__":
     try:
         bot = VoiceBot()
         @bot.event
-        async def on_ready(self):
-            for guild in self.guilds:
+        async def on_ready():
+            for guild in bot.guilds:
                 await guild.system_channel.send("Rock youuu!")
         asyncio.run(bot.add_cog(General(bot)))
         bot.run(bot_token)
