@@ -2,7 +2,7 @@ from discord.ext import commands
 from bot import VoiceBot
 from gtts import gTTS
 from utils.general import get_filename, is_language, generate_lang_help, get_random_clip
-import discord, os, asyncio, logging
+import discord, os, asyncio, logging, typing
 
 class General(commands.Cog):
     def __init__(self, bot: VoiceBot):
@@ -46,23 +46,29 @@ class General(commands.Cog):
             name = "speak",
             brief = "Random Bocchi lines from the anime."
     )
-    async def speak(self, ctx: commands.Context, send_clip: bool = False):
+    async def speak(self, ctx: commands.Context, send_clip: int = 0, *, clip_name: typing.Optional[str]):
         await self.bot.get_author_voice_client(ctx.author)
         if not self.bot.current_client:
             await ctx.reply("You are not in any voice channel.", mention_author=False)
             return
-        clip = get_random_clip()
+        elif clip_name:
+            clip = os.path.join("downloads",  "preloaded", "clips", f"{clip_name}.mp4")
+        else:
+            clip = get_random_clip()
+        if not os.path.isfile(clip):
+            await ctx.reply(f"Could not find clip: {clip_name}", mention_author=False)
+            clip = get_random_clip()
         await ctx.message.add_reaction('⏳')
         self.ongoing = True
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
         self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(clip, **self.ffmpeg_options)), after=finish)
+        if send_clip:
+            async with ctx.typing():
+                await ctx.reply(f"{os.path.basename(clip)[:-4]}", file=discord.File(clip), mention_author=False)
         while self.ongoing:
             await asyncio.sleep(1)
         await ctx.message.remove_reaction('⏳', self.bot.user)
         await ctx.message.add_reaction('✅')
-        if send_clip:
-            async with ctx.typing():
-                await ctx.reply(file=clip, mention_author=False)
     
     @commands.command(
         name = "language",

@@ -55,5 +55,5 @@ def generate_lang_help():
         for j in range(langs_per_help):
             index = i*langs_per_help + j
             if index < len(available_langs):
-                help_text += f"{index+1}. **{available_langs[index][0]}** - {available_langs[index][1]}\n"
+                help_text += f"{index+1}. `{available_langs[index][0]}` - {available_langs[index][1]}\n"
         yield help_text.rstrip()
