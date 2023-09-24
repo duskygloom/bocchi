@@ -17,7 +17,7 @@ class VoiceBot(commands.Bot):
     async def get_author_voice_client(self, author: discord.Member):
         if not author.voice: return
         elif self.current_client:
-            self.current_client.move_to(author.voice.channel)
+            await self.current_client.move_to(author.voice.channel)
         else:
             self.current_client = await author.voice.channel.connect()
 
