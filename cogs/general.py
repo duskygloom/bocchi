@@ -1,7 +1,7 @@
 from discord.ext import commands
 from bot import VoiceBot
-from utils.general import get_filename, is_language, generate_lang_help, get_random_clip
-from utils.music import async_downloader
+from utils.general import is_language, generate_lang_help, get_random_clip
+from utils.music import async_downloader, ffmpeg_path
 import discord, os, asyncio, logging, typing
 
 class General(commands.Cog):
@@ -24,9 +24,8 @@ class General(commands.Cog):
             brief="Bocchi says hi."
     )
     async def greet(self, ctx: commands.Context):
-        await self.bot.get_author_voice_client(ctx.author)
         if not self.bot.current_client:
-            await ctx.reply("You are not in any voice channel.", mention_author=False)
+            await ctx.reply("Invite me into a voice channel first.", mention_author=False)
             return
         greet_audio = os.path.join("downloads", "preloaded", "hello.m4a")
         if not os.path.isfile(greet_audio):
@@ -35,7 +34,7 @@ class General(commands.Cog):
         await ctx.message.add_reaction('⏳')
         self.ongoing = True
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
-        self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(greet_audio, **self.ffmpeg_options)), after=finish)
+        self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(greet_audio, **self.ffmpeg_options, executable=ffmpeg_path)), after=finish)
         while self.ongoing:
             await asyncio.sleep(1)
         self.ongoing = True
@@ -48,9 +47,8 @@ class General(commands.Cog):
     )
     async def clip(self, ctx: commands.Context, send: typing.Optional[bool], *, clip_name: typing.Optional[str]):
         # checking client
-        await self.bot.get_author_voice_client(ctx.author)
         if not self.bot.current_client:
-            await ctx.reply("You are not in any voice channel.", mention_author=False)
+            await ctx.reply("Invite me into a voice channel first.", mention_author=False)
             return
         # selects clip
         elif clip_name:
@@ -66,7 +64,7 @@ class General(commands.Cog):
             self.bot.current_client.pause()
         self.ongoing = True
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
-        self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(clip, **self.ffmpeg_options)), after=finish)
+        self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(clip, **self.ffmpeg_options, executable=ffmpeg_path)), after=finish)
         # sends clip
         if send:
             async with ctx.typing():
@@ -102,9 +100,8 @@ class General(commands.Cog):
     )
     async def google(self, ctx: commands.Context, *, text: str = "hi"):
         # checking client
-        await self.bot.get_author_voice_client(ctx.author)
         if not self.bot.current_client:
-            await ctx.reply("You are not in any voice channel.", mention_author=False)
+            await ctx.reply("Invite me into a voice channel first.", mention_author=False)
             return
         # getting speech
         text = text.lower()
@@ -114,7 +111,7 @@ class General(commands.Cog):
             self.bot.current_client.pause()
         self.ongoing = True
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
-        self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(ttsfile, **self.ffmpeg_options)), after=finish)
+        self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(ttsfile, **self.ffmpeg_options, executable=ffmpeg_path)), after=finish)
         while self.ongoing:
             await asyncio.sleep(1)
         await ctx.message.remove_reaction('⏳', self.bot.user)
@@ -125,11 +122,14 @@ class General(commands.Cog):
         brief = "Bocchi comes into your voice chat."
     )
     async def come(self, ctx: commands.Context):
-        await self.bot.get_author_voice_client(ctx.author)
-        if self.bot.current_client:
-            await ctx.message.add_reaction('✅')
-        else:
+        if not ctx.author.voice:
             await ctx.reply("You are not in any voice channel.", mention_author=False)
+            return
+        elif ctx.voice_client:
+            await self.bot.current_client.move_to(ctx.author.voice.channel)
+        else:
+            self.bot.current_client = await ctx.author.voice.channel.connect()
+        await ctx.message.add_reaction('✅')
 
     @commands.command(
         name = "go",

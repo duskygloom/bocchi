@@ -5,46 +5,27 @@ from utils.general import get_filename
 from functools import partial
 from gtts import gTTS
 
-voice_client: discord.VoiceClient = None
-
 audio_dir = get_filename("audio", "m4a", create_file=False)
 ytdl_options = {
     "format": "m4a/bestaudio",
     "outtmpl": f"{audio_dir}/%(id)s.m4a",
     "noplaylist": True,
 }
-
-async def get_voice_client(ctx: commands.Context) -> discord.VoiceClient | None:
-    '''
-        returns None if author is not connected to voice
-        else returns client
-    '''
-    global voice_client
-    if not ctx.author.voice:
-        # does not return client if author is not connected to voice
-        await ctx.reply("You are not in any voice channel.", mention_author=False)
-        return
-    elif ctx.voice_client and voice_client:
-        # if client exists, moves to author's channel
-        await voice_client.move_to(ctx.author.voice.channel)
-        return voice_client
-    elif ctx.voice_client and not voice_client:
-        # disconnects if has an unsaved client
-        await ctx.voice_client.disconnect()
-    voice_client = await ctx.author.voice.channel.connect()
-    return voice_client
-
-async def disconnect_client(ctx: commands.Context):
-    global voice_client
-    if ctx.voice_client:
-        await ctx.voice_client.disconnect()
-    voice_client = None
-
+ffmpeg_options = {
+    "before_options": "",
+    "options": "-vn"
+}
+ffmpeg_dir = "ffmpeg-essentials"
+ffmpeg_path = None
+if os.path.isdir(ffmpeg_dir):
+    ffmpeg_path = os.path.join(ffmpeg_dir, "bin", "ffmpeg.exe")
+    
 async def async_downloader(ctx: commands.Context, song: str = None, tts_args: dict = None) -> dict | str:
     '''
         returns info dict if song
         else returns file name of tts
     '''
+    to_return = None
     async with ctx.typing():
         await ctx.message.add_reaction('⬇️')
         if song:
@@ -52,14 +33,15 @@ async def async_downloader(ctx: commands.Context, song: str = None, tts_args: di
             info = await ctx.bot.loop.run_in_executor(None, download_function)
             if not info:
                 await ctx.reply(f"Could not find any song: {song}", mention_author=False)
-            return info
+            to_return = info
         elif tts_args:
             download_function = partial(download_speech, tts_args)
             ttsfile = await ctx.bot.loop.run_in_executor(None, download_function)
             if not ttsfile:
                 await ctx.reply(f"Could not generate speech: {tts_args['text']}", mention_author=False)
-            return ttsfile
-        ctx.message.remove_reaction('⬇️', ctx.bot.user)
+            to_return = ttsfile
+        await ctx.message.remove_reaction('⬇️', ctx.bot.user)
+        return to_return
 
 def download_song(query: str):
     '''returns info as output'''

@@ -1,12 +1,16 @@
 from discord.ext import commands
 from bot import VoiceBot
-from utils.music import async_downloader
+from utils.music import async_downloader, ffmpeg_path
 import typing, logging, asyncio, discord
 
 class Music(commands.Cog):
     def __init__(self, bot: VoiceBot):
         super().__init__()
         self.bot = bot
+        self.ffmpeg_options = {
+            "before_options": "",
+            "options": "-vn"
+        }
         self._ongoing = False
         self._repeat = False
         self._volume = 90
@@ -33,9 +37,8 @@ class Music(commands.Cog):
         else:
             info = self.song_queue[0]
         # getting and checking client
-        await self.bot.get_author_voice_client(ctx.author)
         if not self.bot.current_client:
-            await ctx.reply("You are not connected to any voice chat.", mention_author=False)
+            await ctx.reply("Invite me into a voice channel first.", mention_author=False)
             return
         # playing song
         await ctx.message.add_reaction('⏳')
@@ -47,9 +50,9 @@ class Music(commands.Cog):
             self.bot.current_client.pause()    
         self._playing = True
         self.set_ongoing()
-        print("Playing:", info["path"])
+        logging.info("Playing:", info["path"])
         self.bot.current_client.play(
-            discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(info["path"]), volume=self._volume/100), 
+            discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(info["path"], **self.ffmpeg_options, executable=ffmpeg_path), volume=self._volume/100), 
             after=finish
         )
         while self._ongoing:
@@ -74,6 +77,9 @@ class Music(commands.Cog):
         brief = "Bocchi pauses the song."
     )
     async def pause(self, ctx: commands.Context):
+        if not self.bot.current_client:
+            await ctx.reply("Invite me into a voice channel first.", mention_author=False)
+            return
         self.bot.current_client.pause()
         self._playing = False
         await ctx.message.add_reaction('✅')
@@ -83,6 +89,9 @@ class Music(commands.Cog):
         brief = "Bocchi resumes the song."
     )
     async def resume(self, ctx: commands.Context):
+        if not self.bot.current_client:
+            await ctx.reply("Invite me into a voice channel first.", mention_author=False)
+            return
         self.bot.current_client.resume()
         self._playing = True
         await ctx.message.add_reaction('✅')
@@ -101,9 +110,9 @@ class Music(commands.Cog):
         description = "The volume of the current song can only be decreased."
     )
     async def volume(self, ctx: commands.Context, volume: int = 90):
-        await self.bot.get_author_voice_client(ctx.author)
         if not self.bot.current_client:
-            await ctx.reply("You are not connected to any voice channel.", mention_author=False)
+            await ctx.reply("Invite me into a voice channel first.", mention_author=False)
+            return
         elif volume > 100 or volume < 0:
             await ctx.reply("Volume must be between 0 and 100.", mention_author=False)
         else:
@@ -131,3 +140,11 @@ class Music(commands.Cog):
                 info_embed.add_field(name="Artist", value=info.get("uploader"))
                 info_embed.set_thumbnail(url=info.get("thumbnail"))
                 await ctx.send(embed=info_embed)
+
+    @commands.command(
+        name = "clear",
+        brief = "Bocchi clears the song queue."
+    )
+    async def clear(self, ctx: commands.Context):
+        self.song_queue.clear()
+        await ctx.message.add_reaction('✅')
