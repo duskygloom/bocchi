@@ -1,7 +1,7 @@
 from discord.ext import commands
 from bot import VoiceBot
-from gtts import gTTS
 from utils.general import get_filename, is_language, generate_lang_help, get_random_clip
+from utils.music import async_downloader
 import discord, os, asyncio, logging, typing
 
 class General(commands.Cog):
@@ -30,7 +30,7 @@ class General(commands.Cog):
             return
         greet_audio = os.path.join("downloads", "preloaded", "hello.m4a")
         if not os.path.isfile(greet_audio):
-            await self.speak(ctx)
+            await self.clip(ctx)
             return
         await ctx.message.add_reaction('⏳')
         self.ongoing = True
@@ -46,11 +46,13 @@ class General(commands.Cog):
             name = "clip",
             brief = "Random clips."
     )
-    async def speak(self, ctx: commands.Context, send_clip: typing.Optional[int], *, clip_name: typing.Optional[str]):
+    async def clip(self, ctx: commands.Context, send: typing.Optional[bool], *, clip_name: typing.Optional[str]):
+        # checking client
         await self.bot.get_author_voice_client(ctx.author)
         if not self.bot.current_client:
             await ctx.reply("You are not in any voice channel.", mention_author=False)
             return
+        # selects clip
         elif clip_name:
             clip = os.path.join("downloads",  "preloaded", "clips", f"{clip_name}.mp4")
         else:
@@ -59,10 +61,14 @@ class General(commands.Cog):
             await ctx.reply(f"Could not find clip: {clip_name}", mention_author=False)
             clip = get_random_clip()
         await ctx.message.add_reaction('⏳')
+        # plays clip
+        if self.bot.current_client.is_playing():
+            self.bot.current_client.pause()
         self.ongoing = True
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
         self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(clip, **self.ffmpeg_options)), after=finish)
-        if send_clip:
+        # sends clip
+        if send:
             async with ctx.typing():
                 await ctx.reply(f"{os.path.basename(clip)[:-4]}", file=discord.File(clip), mention_author=False)
         while self.ongoing:
@@ -95,15 +101,17 @@ class General(commands.Cog):
         brief="Google like tts."
     )
     async def google(self, ctx: commands.Context, *, text: str = "hi"):
+        # checking client
         await self.bot.get_author_voice_client(ctx.author)
         if not self.bot.current_client:
             await ctx.reply("You are not in any voice channel.", mention_author=False)
             return
+        # getting speech
         text = text.lower()
-        await ctx.message.add_reaction('⏳')
-        speech = gTTS(text, lang=self.language)
-        ttsfile = get_filename("tts", "wav")
-        speech.save(ttsfile)
+        ttsfile = await async_downloader(ctx, tts_args={"text": text, "lang": self.language})
+        # playing speech
+        if self.bot.current_client.is_playing():
+            self.bot.current_client.pause()
         self.ongoing = True
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
         self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(ttsfile, **self.ffmpeg_options)), after=finish)
@@ -128,6 +136,7 @@ class General(commands.Cog):
         brief = "Bocchi goes out of your voice chat."
     )
     async def go(self, ctx: commands.Context):
-        await self.bot.current_client.disconnect()
+        if ctx.voice_client:
+            await ctx.voice_client.disconnect()
         self.bot.current_client = None
         await ctx.message.add_reaction('✅')

@@ -1,6 +1,6 @@
 import asyncio, logging, os, discord
 from bot import VoiceBot
-# from cogs.music import Music
+from cogs.music_rewrite import Music
 from cogs.general import General
 
 try:
@@ -16,6 +16,7 @@ if __name__ == "__main__":
             for guild in bot.guilds:
                 await guild.system_channel.send("Rock youuu!")
         asyncio.run(bot.add_cog(General(bot)))
+        asyncio.run(bot.add_cog(Music(bot)))
         bot.run(bot_token)
     except Exception as e:
         logging.error(e)

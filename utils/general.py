@@ -5,13 +5,16 @@ def padded_int_string(number: int, max_length: int = 10) -> str:
     int_string = str(number)
     return (max_length-len(int_string))*'0' + int_string
 
-def get_filename(folder: str, extension: str):
+def get_filename(folder: str, extension: str, create_file: bool = True):
+    # returns just the directory if create file is False
+    # else returns the filename
     download_dir = "downloads"
     if not os.path.isdir(download_dir):
         os.mkdir(download_dir)
     file_dir = os.path.join(download_dir, folder)
     if not os.path.isdir(file_dir):
         os.mkdir(file_dir)
+    if not create_file: return file_dir
     index = 0
     filename = os.path.join(file_dir, f"{folder}_{padded_int_string(index)}.{extension}")
     while os.path.isfile(filename):
@@ -21,16 +24,6 @@ def get_filename(folder: str, extension: str):
     empty = open(filename, "wb")
     empty.close()
     return filename
-
-def get_ytdl_options() -> (dict, str):
-    '''returns ytdl options and the output filename used'''
-    output_file = get_filename("audio", "m4a")
-    ytdl_options = {
-        "format": "m4a/bestaudio/best",
-        "outtmpl": output_file,
-        "noplaylist": True,
-    }
-    return ytdl_options, output_file
 
 def is_language(lang: str) -> str | None:
     langs = tts.tts_langs()
