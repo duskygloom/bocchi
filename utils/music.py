@@ -8,7 +8,7 @@ from gtts import gTTS
 
 audio_dir = get_filename("audio", "m4a", create_file=False)
 ytdl_options = {
-    "format": "m4a/bestaudio/best",
+    "format": "m4a/bestaudio",
     "outtmpl": f"{audio_dir}/%(id)s.m4a",
     "noplaylist": True,
 }
@@ -50,7 +50,7 @@ async def async_downloader(ctx: commands.Context, song: str = None, tts_args: di
         returns Song object if song
         else returns file name of tts
     '''
-    max_time = 120
+    max_time = 45
     try:
         async with ctx.typing():
             async with timeout(max_time):
