@@ -25,6 +25,10 @@ class Music(commands.Cog):
         brief = "Bocchi plays a song."
     )
     async def play(self, ctx: commands.Context, *, song: typing.Optional[str] = ""):
+        # getting and checking client
+        if not self.bot.current_client:
+            await ctx.reply("Invite me into a voice channel first.", mention_author=False)
+            return
         if not song and len(self.song_queue) == 0:
             await ctx.reply("No songs in the queue.", mention_author=False)
             return
@@ -36,10 +40,6 @@ class Music(commands.Cog):
         # plays song from queue
         else:
             info = self.song_queue[0]
-        # getting and checking client
-        if not self.bot.current_client:
-            await ctx.reply("Invite me into a voice channel first.", mention_author=False)
-            return
         # playing song
         await ctx.message.add_reaction('⏳')
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
@@ -158,11 +158,11 @@ class Music(commands.Cog):
             await ctx.reply("Song queue is empty.", mention_author=False)
             return
         embed = discord.Embed(title="**Now playing**", color=discord.Color.green(), description=f"**{self.song_queue[0].get('title')}**")
-        embed.url = self.song_queue[0].get("url")
+        embed.url = self.song_queue[0].get("original_url")
         embed.add_field(name="Artist", value=self.song_queue[0].get("uploader"))
         duration_seconds = self.song_queue[0].get("duration")
         embed.add_field(name="Duration", value=f"{duration_seconds//60} minutes {duration_seconds%60} seconds")
-        embed.set_image(url=self.song_queue[0].get('thumbnail'))
+        embed.set_image(url=self.song_queue[0].get("thumbnail"))
         await ctx.send(embed=embed)
     @commands.command(
         name = "clear",

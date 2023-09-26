@@ -1,4 +1,4 @@
-import discord, logging, os, asyncio
+import discord, logging, os, asyncio, platform
 from discord.ext import commands
 from yt_dlp import YoutubeDL
 from utils.general import get_filename
@@ -16,8 +16,8 @@ ffmpeg_options = {
     "options": "-vn"
 }
 ffmpeg_dir = "ffmpeg-essentials"
-ffmpeg_path = None
-if os.path.isdir(ffmpeg_dir):
+ffmpeg_path = "ffmpeg"
+if os.path.isdir(ffmpeg_dir) and platform.system() == "Windows":
     ffmpeg_path = os.path.join(ffmpeg_dir, "bin", "ffmpeg.exe")
     
 async def async_downloader(ctx: commands.Context, song: str = None, tts_args: dict = None) -> dict | str:
@@ -54,7 +54,7 @@ def download_song(query: str):
                 logging.error(f"Song not found: {query}")
             info = results["entries"][0]
         except Exception as e:
-            logging.error(e)
+            logging.error(e) 
     if info:
         info["path"] = os.path.join(audio_dir, f"{info.get('id')}.m4a")
     return info
