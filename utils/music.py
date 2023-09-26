@@ -25,7 +25,6 @@ async def async_downloader(ctx: commands.Context, song: str = None, tts_args: di
         returns info dict if song
         else returns file name of tts
     '''
-    to_return = None
     async with ctx.typing():
         await ctx.message.add_reaction('⬇️')
         if song:
@@ -33,15 +32,15 @@ async def async_downloader(ctx: commands.Context, song: str = None, tts_args: di
             info = await ctx.bot.loop.run_in_executor(None, download_function)
             if not info:
                 await ctx.reply(f"Could not find any song: {song}", mention_author=False)
-            to_return = info
+            await ctx.message.remove_reaction('⬇️', ctx.bot.user)
+            return info
         elif tts_args:
             download_function = partial(download_speech, tts_args)
             ttsfile = await ctx.bot.loop.run_in_executor(None, download_function)
             if not ttsfile:
                 await ctx.reply(f"Could not generate speech: {tts_args['text']}", mention_author=False)
-            to_return = ttsfile
-        await ctx.message.remove_reaction('⬇️', ctx.bot.user)
-        return to_return
+            await ctx.message.remove_reaction('⬇️', ctx.bot.user)
+            return ttsfile
 
 def download_song(query: str):
     '''returns info as output'''
