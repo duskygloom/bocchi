@@ -126,6 +126,8 @@ class General(commands.Cog):
             await ctx.reply("You are not in any voice channel.", mention_author=False)
             return
         elif ctx.voice_client:
+            if not self.bot.current_client:
+                self.bot.current_client = await ctx.voice_client.connect()
             await self.bot.current_client.move_to(ctx.author.voice.channel)
         else:
             self.bot.current_client = await ctx.author.voice.channel.connect()

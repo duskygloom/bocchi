@@ -42,33 +42,34 @@ class Music(commands.Cog):
             return
         # playing song
         await ctx.message.add_reaction('⏳')
-        if self._repeat:
-            finish = lambda e: (logging.error(e), self.set_ongoing(False))
-        else:
-            finish = lambda e: (logging.error(e), self.set_ongoing(False))
-        if self.bot.current_client.is_playing():
-            self.bot.current_client.pause()    
+        finish = lambda e: (logging.error(e), self.set_ongoing(False))
         self._playing = True
         self.set_ongoing()
-        logging.info("Playing:", info["path"])
         self.bot.current_client.play(
-            discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(info["path"], **self.ffmpeg_options, executable=ffmpeg_path), volume=self._volume/100), 
+            discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(info.get("path"), **self.ffmpeg_options, executable=ffmpeg_path), volume=self._volume/100), 
             after=finish
         )
+        await self.current(ctx)
         while self._ongoing:
             await asyncio.sleep(1)
-        if self._playing and self._repeat:
-            self.bot.loop.create_task(self.play(ctx))
-        elif self._playing and not self._repeat:
-            self.bot.loop.create_task(self.play(ctx))
         await ctx.message.remove_reaction('⏳', self.bot.user)
-        await ctx.message.add_reaction('✅')
+        if self._playing and self._repeat:
+            await self.play(ctx)
+        elif self._playing and not self._repeat:
+            await self.next(ctx)
 
     @commands.command(
         name = "next",
         brief = "Bocchi plays the next song in queue."
     )
     async def next(self, ctx: commands.Context):
+        if len(self.song_queue) == 0:
+            await ctx.reply("Empty queue.", mention_author=False)
+            return
+        elif len(self.song_queue) == 1:
+            await ctx.reply("No more songs in the queue.", mention_author=False)
+            self.song_queue.pop(0)
+            return
         self.song_queue.pop(0)
         await self.play(ctx)
 
@@ -132,15 +133,37 @@ class Music(commands.Cog):
             info = await async_downloader(ctx, song=song)
             if not info: return
             self.song_queue.append(info)
+            await ctx.reply(f"Added to queue: {info.get('title')}", mention_author=False)
+            return
         # displays queue
         async with ctx.typing():
+            index = 1
             for info in self.song_queue:
-                info_embed = discord.Embed(color=discord.Color.pink())
+                info_embed = discord.Embed(color=discord.Color.pink(), title=f"Song #{index}")
                 info_embed.add_field(name="Title", value=info.get("title"))
                 info_embed.add_field(name="Artist", value=info.get("uploader"))
                 info_embed.set_thumbnail(url=info.get("thumbnail"))
                 await ctx.send(embed=info_embed)
+                index += 1
 
+    @commands.command(
+        name = "current",
+        brief = "Bocchi sends info about the current song."
+    )
+    async def current(self, ctx: commands.Context):
+        if not self._playing:
+            await ctx.reply("No song is currently being played.", mention_author=False)
+            return
+        elif len(self.song_queue) < 1:
+            await ctx.reply("Song queue is empty.", mention_author=False)
+            return
+        embed = discord.Embed(title="**Now playing**", color=discord.Color.green(), description=f"**{self.song_queue[0].get('title')}**")
+        embed.url = self.song_queue[0].get("url")
+        embed.add_field(name="Artist", value=self.song_queue[0].get("uploader"))
+        duration_seconds = self.song_queue[0].get("duration")
+        embed.add_field(name="Duration", value=f"{duration_seconds//60} minutes {duration_seconds%60} seconds")
+        embed.set_image(url=self.song_queue[0].get('thumbnail'))
+        await ctx.send(embed=embed)
     @commands.command(
         name = "clear",
         brief = "Bocchi clears the song queue."
