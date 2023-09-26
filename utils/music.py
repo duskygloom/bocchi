@@ -1,4 +1,5 @@
-import logging, os, platform, asyncio
+import logging, os, platform
+from async_timeout import timeout
 from discord.ext import commands
 from yt_dlp import YoutubeDL
 from utils.general import get_filename
@@ -49,10 +50,10 @@ async def async_downloader(ctx: commands.Context, song: str = None, tts_args: di
         returns Song object if song
         else returns file name of tts
     '''
-    timeout = 120
+    max_time = 120
     try:
         async with ctx.typing():
-            async with asyncio.timeout(timeout):
+            async with timeout(max_time):
                 await ctx.message.add_reaction('⬇️')
                 if song:
                     download_function = partial(download_song, song)
@@ -69,7 +70,7 @@ async def async_downloader(ctx: commands.Context, song: str = None, tts_args: di
                     await ctx.message.remove_reaction('⬇️', ctx.bot.user)
                     return ttsfile
     except TimeoutError:
-        await ctx.reply(f"Download terminated because it is taking too much time.", mention_author=False)
+        await ctx.reply(f"Download terminated because it is taking too much time ({max_time}).", mention_author=False)
         for file in audio_dir:
             if file.endswith(".part"):
                 os.remove(os.join(audio_dir, file))
