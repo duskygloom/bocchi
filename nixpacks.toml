@@ -1,3 +1,2 @@
 [phases.setup]
-aptPkgs = ["...", "libopus0"]
-nixPkgs = ["...", "ffmpeg"]
+nixPkgs = ["...", "ffmpeg", "libopus", "libopusenc"]
