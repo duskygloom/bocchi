@@ -1,10 +1,20 @@
 import logging, os, platform
 from async_timeout import timeout
 from discord.ext import commands
-from yt_dlp.yt_dlp import YoutubeDL
 from utils.general import get_filename
 from functools import partial
 from gtts import gTTS
+
+try:
+    from yt_dlp import YoutubeDL
+except ModuleNotFoundError:
+    if platform.system() == "Windows":
+        logging.warning("Installing yt_dlp...")
+        os.system("python -m pip install yt_dlp")
+    else:
+        logging.warning("Installing yt_dlp...")
+        os.system("python3 -m pip3 install yt_dlp")
+    from yt_dlp import YoutubeDL
 
 audio_dir = get_filename("audio", "m4a", create_file=False)
 ytdl_options = {
