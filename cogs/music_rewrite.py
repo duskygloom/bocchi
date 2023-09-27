@@ -42,7 +42,7 @@ class Music(commands.Cog):
             downloaded = self.song_queue[0]
         # playing song
         if self.bot.current_client.is_playing():
-            self.bot.current_client.pause()
+            self.bot.current_client.stop()
         await ctx.message.add_reaction('⏳')
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
         self._playing = True

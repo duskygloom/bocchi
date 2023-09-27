@@ -32,6 +32,8 @@ class General(commands.Cog):
             await self.clip(ctx)
             return
         await ctx.message.add_reaction('⏳')
+        if self.bot.current_client.is_playing():
+            self.bot.current_client.stop()
         self.ongoing = True
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
         self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(greet_audio, **self.ffmpeg_options, executable=ffmpeg_path)), after=finish)
@@ -61,7 +63,7 @@ class General(commands.Cog):
         await ctx.message.add_reaction('⏳')
         # plays clip
         if self.bot.current_client.is_playing():
-            self.bot.current_client.pause()
+            self.bot.current_client.stop()
         self.ongoing = True
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
         self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(clip, **self.ffmpeg_options, executable=ffmpeg_path)), after=finish)
@@ -108,7 +110,7 @@ class General(commands.Cog):
         ttsfile = await async_downloader(ctx, tts_args={"text": text, "lang": self.language})
         # playing speech
         if self.bot.current_client.is_playing():
-            self.bot.current_client.pause()
+            self.bot.current_client.stop()
         self.ongoing = True
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
         self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(ttsfile, **self.ffmpeg_options, executable=ffmpeg_path)), after=finish)
@@ -138,6 +140,8 @@ class General(commands.Cog):
         brief = "Bocchi goes out of your voice chat."
     )
     async def go(self, ctx: commands.Context):
+        if self.bot.current_client.is_playing():
+            self.bot.current_client.stop()
         if ctx.voice_client:
             await ctx.voice_client.disconnect()
         self.bot.current_client = None
