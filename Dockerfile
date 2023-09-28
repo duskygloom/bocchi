@@ -35,8 +35,6 @@ RUN adduser \
 # RUN --mount=type=cache,target=/root/.cache/pip \
 #     --mount=type=bind,source=requirements.txt,target=requirements.txt \
 #     python -m pip install -r requirements.txt
-RUN --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    python -m pip install -r requirements.txt
 
 # Switch to the non-privileged user to run the application.
 USER appuser
@@ -49,6 +47,7 @@ USER root
 RUN apt-get update -y
 RUN apt-get upgrade -y
 RUN apt-get install ffmpeg libopus0 --no-install-recommends -y
+RUN pip3 install -r requirements.txt
 USER appuser
 
 # Expose the port that the application listens on.
