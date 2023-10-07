@@ -1,7 +1,7 @@
 import asyncio, logging, os, sys
 from bot import VoiceBot
 from discord.ext import commands
-from cogs.music_rewrite import Music
+from cogs.music import Music
 from cogs.general import General
 
 try:
@@ -17,10 +17,10 @@ if __name__ == "__main__":
     try:
         bot = VoiceBot()
         # startup event
-        @bot.event
-        async def on_ready():
-            for guild in bot.guilds:
-                await guild.system_channel.send("Rock youuu!")
+        # @bot.event
+        # async def on_ready():
+        #     for guild in bot.guilds:
+        #         await guild.system_channel.send("Rock youuu!")
         @bot.event
         async def on_command_error(ctx: commands.Context, error: commands.CommandError):
             await ctx.reply(f"Error: {error}", mention_author=False)

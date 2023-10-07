@@ -109,7 +109,7 @@ class General(commands.Cog):
         text = text.lower()
         ttsfile = await async_downloader(ctx, tts_args={"text": text, "lang": self.language})
         # playing speech
-        if self.bot.current_client.is_playing():
+        if self.bot.current_client and self.bot.current_client.is_playing():
             self.bot.current_client.stop()
         self.ongoing = True
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
@@ -140,7 +140,7 @@ class General(commands.Cog):
         brief = "Bocchi goes out of your voice chat."
     )
     async def go(self, ctx: commands.Context):
-        if self.bot.current_client.is_playing():
+        if self.bot.current_client and self.bot.current_client.is_playing():
             self.bot.current_client.stop()
         if ctx.voice_client:
             await ctx.voice_client.disconnect()
