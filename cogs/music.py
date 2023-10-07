@@ -20,43 +20,45 @@ class Music(commands.Cog):
     def set_ongoing(self, status: bool = True):
         self._ongoing = status
 
+    def finish(self, error, ctx):
+        logging.error(error)
+        if self._repeat:
+            asyncio.run_coroutine_threadsafe(self.play(ctx), self.bot.loop)
+        else:
+            asyncio.run_coroutine_threadsafe(self.next(ctx), self.bot.loop)
+
     @commands.command(
         name = "play",
         brief = "Bocchi plays a song."
     )
     async def play(self, ctx: commands.Context, *, song: typing.Optional[str] = ""):
-        # prepends the song if provided
-        if song:
-            downloaded = await async_downloader(ctx, song=song)
-            if not downloaded.exists(): return
-            self.song_queue.insert(0, downloaded)
         # getting and checking client
         if not self.bot.current_client:
             await ctx.reply("Invite me into a voice channel first.", mention_author=False)
             return
+        # prepends the song if provided
+        if song:
+            downloaded = await async_downloader(ctx, song=song)
+            if not downloaded.exists():
+                await ctx.reply(f"Could not find any song: {song}", mention_author=False)
+                return
+            self.song_queue.insert(0, downloaded)
+        # checking if there's song in the queue
         if len(self.song_queue) == 0:
             await ctx.reply("No songs in the queue.", mention_author=False)
             return
         # playing song
-        await ctx.message.add_reaction('⏳')
         if self.bot.current_client.is_playing():
             self.bot.current_client.pause()
         finish = lambda e: (logging.error(e), self.set_ongoing(False))
+        
         self._playing = True
         self.set_ongoing()
         self.bot.current_client.play(
             discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.song_queue[0].path, **self.ffmpeg_options, executable=ffmpeg_path), volume=self._volume/100), 
-            after=finish
+            after=lambda e: self.finish(e, ctx)
         )
         await self.current(ctx)
-        while self._ongoing:
-            await asyncio.sleep(1)
-        await ctx.message.remove_reaction('⏳', self.bot.user)
-        if self._playing and self._repeat and self.bot.current_client:
-            await self.play(ctx)
-            await self.current(ctx)
-        elif self._playing and not self._repeat and self.bot.current_client:
-            await self.next(ctx)
 
     @commands.command(
         name = "next",
@@ -141,9 +143,9 @@ class Music(commands.Cog):
         async with ctx.typing():
             index = 1
             for song in self.song_queue:
-                info_embed = discord.Embed(color=discord.Color.pink(), title=f"Song #{index}", description=song.title)
+                info_embed = discord.Embed(color=discord.Color.pink(), title=f"#{index}", description=song.title, url=song.url)
                 info_embed.add_field(name="Artist", value=song.artist)
-                info_embed.add_field(name="Duration", value=song.duration)
+                info_embed.add_field(name="Duration", value=song.duration_str())
                 info_embed.set_thumbnail(url=song.cover)
                 await ctx.send(embed=info_embed, delete_after=30)
                 index += 1
@@ -162,9 +164,9 @@ class Music(commands.Cog):
         embed = discord.Embed(title="**Now playing**", color=discord.Color.green(), description=f"**{self.song_queue[0].title}**")
         embed.url = self.song_queue[0].url
         embed.add_field(name="Artist", value=self.song_queue[0].artist)
-        embed.add_field(name="Duration", value=self.song_queue[0].duration)
-        # embed.set_image(url=self.song_queue[0].cover)
-        await ctx.send(embed=embed, delete_after=self.song_queue[0].duration)
+        embed.add_field(name="Duration", value=self.song_queue[0].duration_str())
+        embed.set_thumbnail(url=self.song_queue[0].cover)
+        await ctx.send(embed=embed, delete_after=30)
 
     @commands.command(
         name = "clear",
