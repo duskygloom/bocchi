@@ -7,10 +7,10 @@ from gtts import gTTS
 from yt_dlp import YoutubeDL, utils as yt_utils
 import aiohttp
 
-audio_dir = os.path.join("downloads", "audio")
 max_song_duration = 1800
 song_extension = "m4a"
 song_quality = "medium"
+audio_dir = get_filename("audio", song_extension, create_file=False)
 max_download_size = 200_000_000
 
 ytdl_options = {
