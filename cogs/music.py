@@ -38,7 +38,7 @@ class Music(commands.Cog):
             if len(songs) == 0:
                 await ctx.reply(f"Could not find any song: {query}", mention_author=False)
                 return
-            self.song_queue.insert(0, songs[0])
+            self.song_queue = songs.extend(self.song_queue)
         # checking if there's song in the queue
         if len(self.song_queue) == 0:
             await ctx.reply("No songs in the queue.", mention_author=False)
@@ -48,11 +48,8 @@ class Music(commands.Cog):
         while not status:
             await ctx.reply(f"Cannot download {self.song_queue[0].title}.", mention_author=False)
             self.song_queue.pop(0)
-            print("popped")
             if len(self.song_queue) == 0:
-                print("broken")
                 break
-            print("not broken")
             status = await download_song(ctx, self.song_queue[0])
         # playing song
         if self.bot.current_client.is_playing():
