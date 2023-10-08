@@ -17,10 +17,10 @@ if __name__ == "__main__":
     try:
         bot = VoiceBot()
         # startup event
-        # @bot.event
-        # async def on_ready():
-        #     for guild in bot.guilds:
-        #         await guild.system_channel.send("Rock youuu!")
+        @bot.event
+        async def on_ready():
+            for guild in bot.guilds:
+                await guild.system_channel.send("Rock youuu!")
         @bot.event
         async def on_command_error(ctx: commands.Context, error: commands.CommandError):
             await ctx.reply(f"Error: {error}", mention_author=False)
