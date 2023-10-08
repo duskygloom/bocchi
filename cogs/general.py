@@ -1,7 +1,7 @@
 from discord.ext import commands
 from bot import VoiceBot
-from utils.general import is_language, generate_lang_help, get_random_clip
-from utils.music import async_downloader, ffmpeg_path
+from utils.general import is_language, get_language_embeds, get_random_clip
+from utils.music import download_tts, ffmpeg_path
 import discord, os, asyncio, logging, typing
 
 class General(commands.Cog):
@@ -9,15 +9,11 @@ class General(commands.Cog):
         super().__init__()
         self.bot = bot
         self.language = "ja"
-        self.ongoing = False
         self.ffmpeg_options = {
             # "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
             "before_options": "",
             "options": "-vn"
         }
-
-    def set_ongoing(self, status: bool = True):
-        self.ongoing = status
 
     @commands.command(
             name="greet",
@@ -33,15 +29,15 @@ class General(commands.Cog):
             return
         await ctx.message.add_reaction('⏳')
         if self.bot.current_client.is_playing():
-            self.bot.current_client.stop()
-        self.ongoing = True
-        finish = lambda e: (logging.error(e), self.set_ongoing(False))
-        self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(greet_audio, **self.ffmpeg_options, executable=ffmpeg_path)), after=finish)
-        while self.ongoing:
-            await asyncio.sleep(1)
-        self.ongoing = True
-        await ctx.message.remove_reaction('⏳', self.bot.user)
-        await ctx.message.add_reaction('✅')
+            self.bot.current_client.pause()
+        def finish(error, ctx: commands.Context):
+            logging.error(error)
+            asyncio.run_coroutine_threadsafe(ctx.message.remove_reaction('⏳', self.bot.user), ctx.bot.loop)
+            asyncio.run_coroutine_threadsafe(ctx.message.add_reaction('✅'), ctx.bot.loop)
+        self.bot.current_client.play(discord.PCMVolumeTransformer(
+            discord.FFmpegPCMAudio(greet_audio, **self.ffmpeg_options, executable=ffmpeg_path)), 
+            after = lambda e: finish(e, ctx)
+        )
 
     @commands.command(
             name = "clip",
@@ -63,18 +59,20 @@ class General(commands.Cog):
         await ctx.message.add_reaction('⏳')
         # plays clip
         if self.bot.current_client.is_playing():
-            self.bot.current_client.stop()
-        self.ongoing = True
-        finish = lambda e: (logging.error(e), self.set_ongoing(False))
-        self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(clip, **self.ffmpeg_options, executable=ffmpeg_path)), after=finish)
+            self.bot.current_client.pause()
+        def finish(error, ctx: commands.Context):
+            logging.error(error)
+            asyncio.run_coroutine_threadsafe(ctx.message.remove_reaction('⏳', self.bot.user), ctx.bot.loop)
+            asyncio.run_coroutine_threadsafe(ctx.message.add_reaction('✅'), ctx.bot.loop)
+        self.bot.current_client.play(discord.PCMVolumeTransformer(
+            discord.FFmpegPCMAudio(clip, **self.ffmpeg_options, executable=ffmpeg_path)), 
+            after = lambda e: finish(e, ctx)
+        )
         # sends clip
         if send:
             async with ctx.typing():
                 await ctx.reply(f"{os.path.basename(clip)[:-4]}", file=discord.File(clip), mention_author=False)
-        while self.ongoing:
-            await asyncio.sleep(1)
-        await ctx.message.remove_reaction('⏳', self.bot.user)
-        await ctx.message.add_reaction('✅')
+        
     
     @commands.command(
         name = "language",
@@ -88,12 +86,9 @@ class General(commands.Cog):
             await ctx.message.add_reaction('✅')
             return
         await ctx.reply(f"Language not found: {language}", mention_author=False)
-        generator = generate_lang_help()
-        while True:
-            try:
-                await ctx.send(next(generator))
-            except StopIteration:
-                break
+        lang_embeds = get_language_embeds()
+        for embed in lang_embeds:
+            await ctx.send(embed=embed)
         await ctx.message.add_reaction('✅')
 
     @commands.command(
@@ -107,17 +102,19 @@ class General(commands.Cog):
             return
         # getting speech
         text = text.lower()
-        ttsfile = await async_downloader(ctx, tts_args={"text": text, "lang": self.language})
+        ttsfile = await download_tts(ctx, tts_args={"text": text, "lang": self.language})
         # playing speech
         if self.bot.current_client and self.bot.current_client.is_playing():
-            self.bot.current_client.stop()
-        self.ongoing = True
-        finish = lambda e: (logging.error(e), self.set_ongoing(False))
-        self.bot.current_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(ttsfile, **self.ffmpeg_options, executable=ffmpeg_path)), after=finish)
-        while self.ongoing:
-            await asyncio.sleep(1)
-        await ctx.message.remove_reaction('⏳', self.bot.user)
-        await ctx.message.add_reaction('✅')
+            self.bot.current_client.pause()
+        def finish(error, ctx: commands.Context):
+            logging.error(error)
+            os.remove(ttsfile)
+            asyncio.run_coroutine_threadsafe(ctx.message.remove_reaction('⏳', self.bot.user), ctx.bot.loop)
+            asyncio.run_coroutine_threadsafe(ctx.message.add_reaction('✅'), ctx.bot.loop)
+        self.bot.current_client.play(discord.PCMVolumeTransformer(
+            discord.FFmpegPCMAudio(ttsfile, **self.ffmpeg_options, executable=ffmpeg_path)), 
+            after = lambda e: finish(e, ctx)
+        )
 
     @commands.command(
         name = "come",
@@ -141,7 +138,7 @@ class General(commands.Cog):
     )
     async def go(self, ctx: commands.Context):
         if self.bot.current_client and self.bot.current_client.is_playing():
-            self.bot.current_client.stop()
+            self.bot.current_client.pause()
         if ctx.voice_client:
             await ctx.voice_client.disconnect()
         self.bot.current_client = None
