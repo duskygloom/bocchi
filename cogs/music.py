@@ -38,7 +38,8 @@ class Music(commands.Cog):
             if len(songs) == 0:
                 await ctx.reply(f"Could not find any song: {query}", mention_author=False)
                 return
-            self.song_queue = songs.extend(self.song_queue)
+            songs.extend(self.song_queue)
+            self.song_queue = songs
         # checking if there's song in the queue
         if len(self.song_queue) == 0:
             await ctx.reply("No songs in the queue.", mention_author=False)
@@ -140,8 +141,7 @@ class Music(commands.Cog):
             if len(songs) == 0:
                 await ctx.reply(f"Could not find any song: {query}", mention_author=False)
                 return
-            for song in songs:
-                self.song_queue.append(song)
+            self.song_queue.extend(songs)
             return
         # displays queue
         if len(self.song_queue) == 0:

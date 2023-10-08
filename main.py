@@ -16,7 +16,7 @@ except ModuleNotFoundError:
 if __name__ == "__main__":
     try:
         bot = VoiceBot()
-        # startup event
+        # events
         @bot.event
         async def on_ready():
             for guild in bot.guilds:
