@@ -186,7 +186,7 @@ class Music(commands.Cog):
         embed.add_field(name="Artist", value=self.song_queue[0].artist)
         embed.add_field(name="Duration", value=self.song_queue[0].duration_str())
         embed.set_image(url=self.song_queue[0].cover)
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, delete_after=45)
 
     @commands.command(
         name = "stop",
