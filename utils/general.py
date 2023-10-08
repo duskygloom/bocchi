@@ -1,5 +1,6 @@
-import os, math, random
+import os, random, logging
 from gtts import tts
+from discord import Embed, Color
 
 def padded_int_string(number: int, max_length: int = 10) -> str:
     int_string = str(number)
@@ -40,13 +41,31 @@ def get_random_clip():
             clips.append(filepath)
     return random.choice(clips)
 
-def generate_lang_help():
+def get_language_embeds() -> list[Embed]:
     available_langs = list(tts.tts_langs().items())
-    langs_per_help = 20
-    for i in range(math.ceil(len(available_langs)/langs_per_help)):
-        help_text = ""
-        for j in range(langs_per_help):
-            index = i*langs_per_help + j
-            if index < len(available_langs):
-                help_text += f"{index+1}. `{available_langs[index][0]}` - {available_langs[index][1]}\n"
-        yield help_text.rstrip()
+    if len(available_langs) == 0:
+        logging.warning("No tts language found.")
+        return
+    max_field = 24
+    embeds = []
+    index = 0
+    for i in range(len(available_langs)//max_field):
+        lang_embed = Embed(color=Color.pink())
+        for j in range(max_field):
+            lang_embed.add_field(
+                name=f"*#{index+1}* **/ {len(available_langs)}**", 
+                value=f"{available_langs[index][0]}\n{available_langs[index][1]}"
+            )
+            index += 1
+        embeds.append(lang_embed)
+    if len(available_langs) % max_field == 0:
+        return embeds
+    lang_embed = Embed(color=Color.pink())
+    for i in range(len(available_langs)%max_field):
+        lang_embed.add_field(
+            name=f"*#{index+1}* **/ {len(available_langs)}**", 
+            value=f"{available_langs[index][0]}\n{available_langs[index][1]}"
+        )
+        index += 1
+    embeds.append(lang_embed)
+    return embeds
