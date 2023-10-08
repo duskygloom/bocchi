@@ -88,7 +88,7 @@ class General(commands.Cog):
         await ctx.reply(f"Language not found: {language}", mention_author=False)
         lang_embeds = get_language_embeds()
         for embed in lang_embeds:
-            await ctx.send(embed=embed)
+            await ctx.send(embed=embed, delete_after=45)
         await ctx.message.add_reaction('✅')
 
     @commands.command(

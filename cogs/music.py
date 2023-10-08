@@ -159,7 +159,7 @@ class Music(commands.Cog):
                     song = self.song_queue[index]
                     info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self.song_queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}")
                     index += 1
-                await ctx.send(embed=info_embed)
+                await ctx.send(embed=info_embed, delete_after=45)
             if len(self.song_queue) % max_field == 0:
                 return
             info_embed = discord.Embed(color=discord.Color.pink())
@@ -167,7 +167,7 @@ class Music(commands.Cog):
                 song = self.song_queue[index]
                 info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self.song_queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}")
                 index += 1
-            await ctx.send(embed=info_embed)
+            await ctx.send(embed=info_embed, delete_after=45)
 
     @commands.command(
         name = "current",
@@ -186,7 +186,7 @@ class Music(commands.Cog):
         embed.add_field(name="Artist", value=self.song_queue[0].artist)
         embed.add_field(name="Duration", value=self.song_queue[0].duration_str())
         embed.set_image(url=self.song_queue[0].cover)
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, delete_after=45)
 
     @commands.command(
         name = "stop",
