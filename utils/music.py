@@ -34,7 +34,7 @@ class Song:
         self.id = result_raw.get("id")
         self.url = result_raw.get("url") or result_raw("original_url")
         self.title = result_raw.get("title")
-        self.duration = result_raw.get("duration")
+        self.duration = result_raw.get("duration") or 0
         self.artist = result_raw.get("channel")
         self.cover = result_raw.get("thumbnails")[-1].get("url")
         self.source = os.path.join(audio_dir, f"{self.id}.{song_extension}")
