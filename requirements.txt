@@ -2,7 +2,7 @@ beautifulsoup4
 discord.py
 gTTS
 PyNaCl
-requests
+request
 mutagen
 pycryptodomex
 websockets

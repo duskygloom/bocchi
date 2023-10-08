@@ -11,6 +11,7 @@ audio_dir = os.path.join("downloads", "audio")
 max_song_duration = 1800
 song_extension = "m4a"
 song_quality = "medium"
+max_download_size = 200_000_000
 
 ytdl_options = {
     "format": f"{song_extension}/{song_quality}",
@@ -42,7 +43,6 @@ class Song:
             self.source_url = get_audio_url(result_raw)
         
     def clear_downloads(self):
-        max_download_size = 500_000_000
         total_size = 0
         for file in os.listdir(audio_dir):
             path = os.path.join(audio_dir, file)
