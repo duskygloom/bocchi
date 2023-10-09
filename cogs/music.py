@@ -260,6 +260,7 @@ class Music(commands.Cog):
     )
     async def stop(self, ctx: commands.Context):
         self._queue.clear()
+        self._index = 1
         if self.bot.current_client:
             self.bot.current_client.stop()
         self._playing = False
