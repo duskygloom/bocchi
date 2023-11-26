@@ -135,14 +135,15 @@ class Music(commands.Cog):
         brief = "Bocchi removes the particular song.",
         aliases = ["delete"]
     )
-    async def remove(self, ctx: commands.Context, index: int):
+    async def remove(self, ctx: commands.Context, index: typing.Optional[int]):
+        if index is None: index = self._index
         if index <= 0 or index > len(self._queue):
             await ctx.reply(f"Unexpected index: {index}", mention_author=False)
             return
         self._queue.pop(index-1)
         if self._index == index:
-            await self.bot.current_client.pause()
-            await self.play()
+            self.bot.current_client.pause()
+            await self.play(ctx)
         await ctx.message.add_reaction('✅')
 
     @commands.command(
@@ -221,7 +222,10 @@ class Music(commands.Cog):
                 info_embed = discord.Embed(color=discord.Color.pink())
                 for j in range(max_field):
                     song = self._queue[index]
-                    info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}")
+                    if index+1 == self._index:
+                        info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}** [Current]", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
+                    else:
+                        info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
                     index += 1
                 await ctx.send(embed=info_embed, delete_after=45)
             if len(self._queue) % max_field == 0:
@@ -229,7 +233,7 @@ class Music(commands.Cog):
             info_embed = discord.Embed(color=discord.Color.pink())
             for i in range(len(self._queue)%max_field):
                 song = self._queue[index]
-                info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}")
+                info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
                 index += 1
             await ctx.send(embed=info_embed, delete_after=45)
 

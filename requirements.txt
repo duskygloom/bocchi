@@ -1,5 +1,6 @@
 beautifulsoup4
 discord.py
+yt_dlp
 gTTS
 PyNaCl
 requests

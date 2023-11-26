@@ -126,7 +126,7 @@ class General(commands.Cog):
             return
         elif ctx.voice_client:
             if not self.bot.current_client:
-                self.bot.current_client = await ctx.voice_client.connect()
+                self.bot.current_client = await ctx.voice_client.connect(timeout=180, reconnect=True)
             await self.bot.current_client.move_to(ctx.author.voice.channel)
         else:
             self.bot.current_client = await ctx.author.voice.channel.connect()

@@ -23,6 +23,7 @@ if __name__ == "__main__":
                 await guild.system_channel.send("Rock youuu!")
         @bot.event
         async def on_command_error(ctx: commands.Context, error: commands.CommandError):
+            logging.error(error, stack_info=True)
             await ctx.reply(f"Error: {error}", mention_author=False)
         # loading cog
         asyncio.run(bot.add_cog(General(bot)))
