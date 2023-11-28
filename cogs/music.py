@@ -324,4 +324,4 @@ class Music(commands.Cog):
     )
     async def loop(self, ctx: commands.Context):
         self._loop = not self._loop
-        await ctx.message.add_reaction('✅')
+        await ctx.reply(f"Loop mode: {self._loop}", mention_author=False)
