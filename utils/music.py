@@ -68,11 +68,10 @@ class Song:
     
 async def get_songs(ctx: commands.Context, query: str) -> list[Song]:
     search_function = partial(search_youtube, query)
-    async with ctx.typing():
-        await ctx.message.add_reaction('⏳')
-        search_results: list[Song] = await ctx.bot.loop.run_in_executor(None, search_function)
-        await ctx.message.remove_reaction('⏳', ctx.bot.user)
-        return search_results
+    await ctx.message.add_reaction('⏳')
+    search_results: list[Song] = await ctx.bot.loop.run_in_executor(None, search_function)
+    await ctx.message.remove_reaction('⏳', ctx.bot.user)
+    return search_results
 
 async def download_song(ctx: commands.Context, song: Song) -> bool:
     if song.duration > max_song_duration:
@@ -80,11 +79,10 @@ async def download_song(ctx: commands.Context, song: Song) -> bool:
     elif os.path.isfile(os.path.join(audio_dir, f"{song.id}.{song_extension}")):
         logging.warning(f"Already downloaded: {song.id}.{song_extension}")
         return True
-    async with ctx.typing():
-        await ctx.message.add_reaction('⬇️')
-        await song.download()
-        await ctx.message.remove_reaction('⬇️', ctx.bot.user)
-        return True
+    await ctx.message.add_reaction('⬇️')
+    await song.download()
+    await ctx.message.remove_reaction('⬇️', ctx.bot.user)
+    return True
 
 def get_audio_url(info: dict) -> str:
     '''
@@ -127,13 +125,12 @@ def search_youtube(query: str) -> list[Song]:
     return results
 
 async def download_tts(ctx: commands.Context, tts_args: dict) -> str:
-    async with ctx.typing():
-        await ctx.message.add_reaction('⬇️')
-        download_function = partial(download_speech, tts_args)
-        ttsfile = await ctx.bot.loop.run_in_executor(None, download_function)
-        if not ttsfile:
-            await ctx.reply(f"Could not generate speech: {tts_args['text']}", mention_author=False)
-        await ctx.message.remove_reaction('⬇️', ctx.bot.user)
+    await ctx.message.add_reaction('⬇️')
+    download_function = partial(download_speech, tts_args)
+    ttsfile = await ctx.bot.loop.run_in_executor(None, download_function)
+    if not ttsfile:
+        await ctx.reply(f"Could not generate speech: {tts_args['text']}", mention_author=False)
+    await ctx.message.remove_reaction('⬇️', ctx.bot.user)
     return ttsfile
 
 def download_speech(tts_args: dict) -> str:

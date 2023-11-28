@@ -1,7 +1,7 @@
 from discord.ext import commands
 from bot import VoiceBot
 from utils.music import get_songs, download_song, ffmpeg_path, Song
-import typing, logging, asyncio, discord
+import typing, logging, asyncio, discord, random
 
 class Music(commands.Cog):
     def __init__(self, bot: VoiceBot):
@@ -268,4 +268,19 @@ class Music(commands.Cog):
         if self.bot.current_client:
             self.bot.current_client.stop()
         self._playing = False
+        await ctx.message.add_reaction('✅')
+
+    @commands.command(
+        name = "shuffle",
+        brief = "Bocchi shuffles the song queue.",
+    )
+    async def shuffle(self, ctx: commands.Context):
+        current_song = self._queue[self._index-1]
+        random.shuffle(self._queue)
+        self._index = 1
+        for song in self._queue:
+            self._index += 1
+            if song.id == current_song.id:
+                break
+        self._index %= len(self._index)
         await ctx.message.add_reaction('✅')
