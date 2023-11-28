@@ -216,26 +216,27 @@ class Music(commands.Cog):
             await ctx.reply("No songs in the queue.", mention_author=False)
             return
         max_field = 24
-        async with ctx.typing():
-            index = 0
-            for i in range(len(self._queue)//max_field):
-                info_embed = discord.Embed(color=discord.Color.pink())
-                for j in range(max_field):
-                    song = self._queue[index]
-                    if index+1 == self._index:
-                        info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}** [Current]", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
-                    else:
-                        info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
-                    index += 1
-                await ctx.send(embed=info_embed, delete_after=45)
-            if len(self._queue) % max_field == 0:
-                return
+        await ctx.message.add_reaction('⏳')
+        index = 0
+        for i in range(len(self._queue)//max_field):
             info_embed = discord.Embed(color=discord.Color.pink())
-            for i in range(len(self._queue)%max_field):
+            for j in range(max_field):
                 song = self._queue[index]
-                info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
+                if index+1 == self._index:
+                    info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}** [Current]", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
+                else:
+                    info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
                 index += 1
             await ctx.send(embed=info_embed, delete_after=45)
+        if len(self._queue) % max_field == 0:
+            return
+        info_embed = discord.Embed(color=discord.Color.pink())
+        for i in range(len(self._queue)%max_field):
+            song = self._queue[index]
+            info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
+            index += 1
+        await ctx.send(embed=info_embed, delete_after=45)
+        await ctx.message.remove_reaction('⏳', ctx.bot.user)
 
     @commands.command(
         name = "current",
