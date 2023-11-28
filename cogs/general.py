@@ -148,7 +148,7 @@ class General(commands.Cog):
     @commands.command(
         name = "sleep",
         brief = "Bocchi shuts down.",
-        alias = ["quit", "off", "shutdown"]
+        alias = ["off", "shutdown"]
     )
     async def sleep(self, ctx: commands.Context, *, reason: str = "No reason specified."):
         if ctx.author.guild_permissions.administrator:
