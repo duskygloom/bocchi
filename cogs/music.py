@@ -302,8 +302,8 @@ class Music(commands.Cog):
     )
     async def shuffleplay(self, ctx: commands.Context, *, query: typing.Optional[str] = ""):
         if not query:
-            self._shuffle()
-            self.play(ctx)
+            random.shuffle(self._queue)
+            await self.play(ctx)
             await ctx.message.add_reaction('✅')
             return
         # prepends the song if provided
@@ -314,6 +314,14 @@ class Music(commands.Cog):
             return
         self._queue = self._queue[:self._index-1] + songs + self._queue[self._index-1:]
         await ctx.message.remove_reaction('⏳', ctx.bot.user)
-        self._shuffle()
+        random.shuffle(self._queue)
         await self.play(ctx)
+        await ctx.message.add_reaction('✅')
+
+    @commands.command(
+        name = "loop",
+        brief = "Bocchi loops (or un-loops) the song queue.",
+    )
+    async def loop(self, ctx: commands.Context):
+        self._loop = not self._loop
         await ctx.message.add_reaction('✅')
