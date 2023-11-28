@@ -232,11 +232,14 @@ class Music(commands.Cog):
             return
         info_embed = discord.Embed(color=discord.Color.pink())
         for i in range(len(self._queue)%max_field):
-            song = self._queue[index]
-            info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
+            if index+1 == self._index:
+                info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}** [Current]", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
+            else:
+                info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}**", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
             index += 1
         await ctx.send(embed=info_embed, delete_after=45)
         await ctx.message.remove_reaction('⏳', ctx.bot.user)
+        await ctx.message.add_reaction('✅')
 
     @commands.command(
         name = "current",
@@ -244,6 +247,7 @@ class Music(commands.Cog):
         aliases = ["now"]
     )
     async def current(self, ctx: commands.Context):
+        await ctx.message.add_reaction('⏳')
         if not self._playing:
             await ctx.reply("No song is currently being played.", mention_author=False)
             return
@@ -257,6 +261,7 @@ class Music(commands.Cog):
         embed.add_field(name="Duration", value=currsong.duration_str())
         embed.set_image(url=currsong.cover)
         await ctx.send(embed=embed, delete_after=45)
+        await ctx.message.remove_reaction('⏳', ctx.bot.user)
 
     @commands.command(
         name = "stop",
@@ -280,8 +285,8 @@ class Music(commands.Cog):
         random.shuffle(self._queue)
         self._index = 1
         for song in self._queue:
-            self._index += 1
             if song.id == current_song.id:
                 break
+            self._index += 1
         self._index %= len(self._queue)
         await ctx.message.add_reaction('✅')
