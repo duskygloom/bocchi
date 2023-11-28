@@ -315,5 +315,5 @@ class Music(commands.Cog):
         self._queue = self._queue[:self._index-1] + songs + self._queue[self._index-1:]
         await ctx.message.remove_reaction('⏳', ctx.bot.user)
         self._shuffle()
-        self.play(ctx)
+        await self.play(ctx)
         await ctx.message.add_reaction('✅')
