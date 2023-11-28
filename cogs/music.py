@@ -232,6 +232,7 @@ class Music(commands.Cog):
             return
         info_embed = discord.Embed(color=discord.Color.pink())
         for i in range(len(self._queue)%max_field):
+            song = self._queue[index]
             if index+1 == self._index:
                 info_embed.add_field(name=f"*#{index+1}* **/ 0{len(self._queue)}** [Current]", value=f"**{song.title}**\nBy **{song.artist}**\n**Duration:** {song.duration_str()}", inline=False)
             else:
@@ -314,4 +315,5 @@ class Music(commands.Cog):
         self._queue = self._queue[:self._index-1] + songs + self._queue[self._index-1:]
         await ctx.message.remove_reaction('⏳', ctx.bot.user)
         self._shuffle()
+        self.play(ctx)
         await ctx.message.add_reaction('✅')
