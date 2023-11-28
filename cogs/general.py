@@ -2,6 +2,7 @@ from discord.ext import commands
 from bot import VoiceBot
 from utils.general import is_language, get_language_embeds, get_random_clip
 from utils.music import download_tts, ffmpeg_path
+from datetime import datetime
 import discord, os, asyncio, logging, typing
 
 class General(commands.Cog):
@@ -143,3 +144,17 @@ class General(commands.Cog):
             await ctx.voice_client.disconnect()
         self.bot.current_client = None
         await ctx.message.add_reaction('✅')
+
+    @commands.command(
+        name = "sleep",
+        brief = "Bocchi shuts down.",
+        alias = ["quit", "off", "shutdown"]
+    )
+    async def sleep(self, ctx: commands.Context, *, reason: str = "No reason specified."):
+        if ctx.author.guild_permissions.administrator:
+            with open("sleep_reason.txt", "w") as f:
+                f.write(f"{datetime.now().isoformat()} -> {ctx.author}: {reason}")
+            await ctx.reply("Bye bye.", mention_author=False)
+            await ctx.bot.close()
+        else:
+            await ctx.reply("You are not an administrator.", mention_author=False)

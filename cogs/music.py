@@ -276,11 +276,7 @@ class Music(commands.Cog):
         self._playing = False
         await ctx.message.add_reaction('✅')
 
-    @commands.command(
-        name = "shuffle",
-        brief = "Bocchi shuffles the song queue.",
-    )
-    async def shuffle(self, ctx: commands.Context):
+    def _shuffle(self):
         current_song = self._queue[self._index-1]
         random.shuffle(self._queue)
         self._index = 1
@@ -289,4 +285,33 @@ class Music(commands.Cog):
                 break
             self._index += 1
         self._index %= len(self._queue)
+
+    @commands.command(
+        name = "shuffle",
+        brief = "Bocchi shuffles the song queue.",
+    )
+    async def shuffle(self, ctx: commands.Context):
+        self._shuffle()
+        await ctx.message.add_reaction('✅')
+    
+    @commands.command(
+        name = "shuffleplay",
+        brief = "Bocchi shuffles the song queue and starts playing.",
+        alias = ["playshuffle"]
+    )
+    async def shuffleplay(self, ctx: commands.Context, *, query: typing.Optional[str] = ""):
+        if not query:
+            self._shuffle()
+            self.play(ctx)
+            await ctx.message.add_reaction('✅')
+            return
+        # prepends the song if provided
+        await ctx.message.add_reaction('⏳')
+        songs = await get_songs(ctx, query)
+        if len(songs) == 0:
+            await ctx.reply(f"Could not find any song: {query}", mention_author=False)
+            return
+        self._queue = self._queue[:self._index-1] + songs + self._queue[self._index-1:]
+        await ctx.message.remove_reaction('⏳', ctx.bot.user)
+        self._shuffle()
         await ctx.message.add_reaction('✅')
