@@ -283,5 +283,5 @@ class Music(commands.Cog):
             self._index += 1
             if song.id == current_song.id:
                 break
-        self._index %= len(self._index)
+        self._index %= len(self._queue)
         await ctx.message.add_reaction('✅')
